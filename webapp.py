@@ -1,7 +1,4 @@
-pip install pdfplumber
-
 import streamlit as st
-import pdfplumber
 import json
 import pandas as pd
 import re
@@ -9,6 +6,18 @@ import os
 import tempfile
 from pathlib import Path
 import numpy as np
+
+# Coba import pdfplumber, jika error gunakan pymupdf
+try:
+    import pdfplumber
+    PDF_LIBRARY = "pdfplumber"
+except ImportError:
+    try:
+        import fitz  # pymupdf
+        PDF_LIBRARY = "pymupdf"
+    except ImportError:
+        st.error("❌ Tidak ada library PDF yang terinstall. Pastikan pdfplumber atau pymupdf ada di requirements.txt")
+        PDF_LIBRARY = None
 
 # Set page configuration
 st.set_page_config(
@@ -60,22 +69,53 @@ uploaded_files = st.sidebar.file_uploader(
     accept_multiple_files=True
 )
 
-# Fungsi-fungsi utama (diperbaiki sesuai kode ipynb)
+# Fungsi ekstraksi PDF yang kompatibel dengan kedua library
+def extract_text_from_pdf(pdf_file, library):
+    """Mengekstrak teks dari PDF menggunakan library yang tersedia"""
+    text_data = []
+    
+    if library == "pdfplumber":
+        with pdfplumber.open(pdf_file) as pdf:  
+            for page in pdf.pages:  
+                text = page.extract_text()  
+                if text: 
+                    text_data.append(text)
+                    
+    elif library == "pymupdf":
+        doc = fitz.open(stream=pdf_file.read(), filetype="pdf")
+        for page in doc:
+            text = page.get_text()
+            if text:
+                text_data.append(text)
+        doc.close()
+        
+    return text_data
+
 def pdf_to_json(pdf_file, json_file_path):
     """Mengkonversi file PDF ke JSON"""
-    text_data = []  # LIST SIMPAN TEKS DARI SETIAP PAGE
-
-    with pdfplumber.open(pdf_file) as pdf:  
-        for page in pdf.pages:  
-            text = page.extract_text()  
-            if text: 
-                text_data.append(text) 
+    if PDF_LIBRARY is None:
+        st.error("Library PDF tidak tersedia")
+        return []
+        
+    text_data = extract_text_from_pdf(pdf_file, PDF_LIBRARY)
 
     # SIMPAN TEKS DALAM FORMAT JSON
     with open(json_file_path, 'w', encoding='utf-8') as output_file:  
         json.dump(text_data, output_file, ensure_ascii=False, indent=4)
     
     return text_data
+
+# Tampilkan informasi library yang digunakan
+if PDF_LIBRARY:
+    st.sidebar.info(f"📚 Using: {PDF_LIBRARY}")
+else:
+    st.error("""
+    ❌ Library PDF tidak terinstall. 
+    
+    Tambahkan salah satu ke requirements.txt:
+    - pdfplumber==0.10.3
+    - atau pymupdf==1.23.8
+    """)
 
 def read_json_files(json_files):
     """Membaca semua file JSON dan menggabungkannya"""
@@ -661,3 +701,4 @@ def main():
 if __name__ == "__main__":
 
     main()
+

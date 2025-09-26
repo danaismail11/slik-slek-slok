@@ -517,37 +517,38 @@ def process_kredit_data(combined_data):
                 'Kredit yang bukan merupakan kredit/': 'Kredit yang bukan merupakan kredit/pembiayaan dalam rangka program pemerintah'
             }, regex=False)
 
-        # Proses data bank
-        try:
-            # Coba baca file kode bank
-            kodebank_path = "ZZ Data Kode Bank.xlsx"
-            if os.path.exists(kodebank_path):
-                kodebank = pd.read_excel(kodebank_path)
-                
-                # Function untuk memisahkan bank dan cabang
-                def pisahkan_bank_cabang(row, kodebank):
-                    if pd.isna(row):
-                        return pd.Series([None, None])
-                    for keterangan in kodebank['KETERANGAN']:
-                        if keterangan in str(row):
-                            cabang = str(row).replace(keterangan, '').strip()
-                            return pd.Series([keterangan, cabang])
-                    return pd.Series([row, '']) 
-
-                if 'BANK' in kredit4.columns:
-                    kredit4[['BANK', 'CABANG']] = kredit4['BANK'].apply(lambda x: pisahkan_bank_cabang(x, kodebank))
-
-                # Split Kode Bank & Nama Bank
-                if 'BANK' in kredit4.columns:
-                    kredit4[['KODE BANK', 'NAMA BANK']] = kredit4['BANK'].str.split(' - ', n=1, expand=True)
-
-                # Mapping nama bank
-                if 'KETERANGAN' in kodebank.columns and 'NAMA BANK' in kodebank.columns:
-                    mapping_dict = dict(zip(kodebank['KETERANGAN'], kodebank['NAMA BANK']))
-                    kredit4['BANK'] = kredit4['BANK'].map(mapping_dict)
-                    
-        except Exception as e:
-            st.warning(f"Tidak dapat memproses data kode bank: {str(e)}")
+# Proses data bank (tanpa file external)
+try:
+    if 'BANK' in kredit4.columns:
+        # Split Kode Bank & Nama Bank dari format "KODE - NAMA BANK"
+        kredit4[['KODE BANK', 'NAMA BANK']] = kredit4['BANK'].str.split(' - ', n=1, expand=True)
+        
+        # Untuk CABANG, ekstrak dari NAMA BANK jika ada informasi cabang
+        def extract_cabang(nama_bank):
+            if pd.isna(nama_bank):
+                return ''
+            # Cari kata "CABANG" atau "CAB." dalam teks
+            if 'CABANG' in nama_bank.upper() or 'CAB.' in nama_bank.upper():
+                # Ambil bagian setelah "CABANG" atau "CAB."
+                parts = re.split(r'CABANG|CAB\.', nama_bank.upper(), maxsplit=1)
+                if len(parts) > 1:
+                    return parts[1].strip()
+            return ''
+        
+        kredit4['CABANG'] = kredit4['NAMA BANK'].apply(extract_cabang)
+        
+        # Bersihkan NAMA BANK dari informasi cabang
+        def clean_nama_bank(nama_bank):
+            if pd.isna(nama_bank):
+                return nama_bank
+            # Hapus informasi cabang
+            cleaned = re.sub(r'CABANG\s+.+|CAB\.\s+.+', '', nama_bank, flags=re.IGNORECASE)
+            return cleaned.strip()
+        
+        kredit4['NAMA BANK'] = kredit4['NAMA BANK'].apply(clean_nama_bank)
+        
+except Exception as e:
+    st.warning(f"Tidak dapat memproses data bank: {str(e)}")
 
         # Tambahkan kategori dan rename kolom
         kredit4['Kategori'] = 'Kredit/Pembiayaan'
@@ -701,4 +702,5 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 

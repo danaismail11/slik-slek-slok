@@ -1,4 +1,5 @@
 import streamlit as st
+import pdfplumber
 import json
 import pandas as pd
 import re
@@ -13,10 +14,10 @@ import subprocess
 import sys
 
 try:
-    import fitz  # PyMuPDF
+    import pdfplumber
 except ImportError:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "PyMuPDF"])
-    import fitz
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "pdfplumber"])
+    import pdfplumber
 
 # Set page configuration
 st.set_page_config(
@@ -68,34 +69,20 @@ uploaded_files = st.sidebar.file_uploader(
     accept_multiple_files=True
 )
 
-# FUNGSI-FUNGSI UTAMA (DIUBAH MENGGUNAKAN PyMuPDF)
+# Fungsi-fungsi utama (diperbaiki sesuai kode ipynb)
 def pdf_to_json(pdf_file, json_file_path):
-    """Mengkonversi file PDF ke JSON menggunakan PyMuPDF"""
+    """Mengkonversi file PDF ke JSON"""
     text_data = []  # LIST SIMPAN TEKS DARI SETIAP PAGE
 
-    try:
-        # Baca file PDF menggunakan PyMuPDF
-        pdf_data = pdf_file.read()
-        doc = fitz.open(stream=pdf_data, filetype="pdf")
-        
-        for page_num in range(len(doc)):
-            page = doc.load_page(page_num)
-            text = page.get_text()
-            if text.strip():  # Hanya tambahkan jika ada teks
-                text_data.append(text)
-        
-        doc.close()
-        
-    except Exception as e:
-        st.error(f"Error membaca PDF: {str(e)}")
-        return []
+    with pdfplumber.open(pdf_file) as pdf:  
+        for page in pdf.pages:  
+            text = page.extract_text()  
+            if text: 
+                text_data.append(text) 
 
     # SIMPAN TEKS DALAM FORMAT JSON
-    try:
-        with open(json_file_path, 'w', encoding='utf-8') as output_file:  
-            json.dump(text_data, output_file, ensure_ascii=False, indent=4)
-    except Exception as e:
-        st.error(f"Error menyimpan JSON: {str(e)}")
+    with open(json_file_path, 'w', encoding='utf-8') as output_file:  
+        json.dump(text_data, output_file, ensure_ascii=False, indent=4)
     
     return text_data
 
@@ -1689,6 +1676,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-

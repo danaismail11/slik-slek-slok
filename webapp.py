@@ -186,8 +186,17 @@ if uploaded_files:
 else:
     st.info("📁 Silakan upload file PDF SLIK Report melalui sidebar di sebelah kiri")
 
-# TAMBAHKAN FUNGSI-FUNGSI LAINNYA YANG SUDAH ANDA MILIKI DI SINI
-# (seperti fungsi untuk processing data, export Excel, dll.)
+# Setelah berhasil baca JSON, tampilkan sample data mentah
+if combined_df is not None:
+    st.success(f"✅ Berhasil membaca {len(json_files)} file JSON")
+    
+    # DEBUG: Tampilkan data mentah
+    st.write("**Data Mentah dari PDF (Sample):**")
+    for i, row in combined_df.head(3).iterrows():
+        st.write(f"--- Baris {i} ---")
+        st.text(row[0] if len(row) > 0 else "No data")  # Assuming first column has the text
+    
+    # Lanjutkan processing...
 
 def process_kredit_data(combined_data):
     """Memproses data kredit dari data gabungan"""
@@ -1763,5 +1772,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 

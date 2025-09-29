@@ -74,12 +74,16 @@ def pdf_to_json(pdf_file, json_file_path):
     text_data = []  # LIST SIMPAN TEKS DARI SETIAP PAGE
 
     try:
-        # PASTIKAN file pointer di reset ke awal
-        pdf_file.seek(0)
-        
-        # Baca file PDF menggunakan PyMuPDF
-        pdf_data = pdf_file.read()
-        doc = fitz.open(stream=pdf_data, filetype="pdf")
+        # CEK TIPE DATA - jika string (file path), jika file object
+        if isinstance(pdf_file, str):
+            # Jika pdf_file adalah file path (string)
+            doc = fitz.open(pdf_file)
+        else:
+            # Jika pdf_file adalah file object (Streamlit uploaded file)
+            # Reset file pointer ke awal
+            pdf_file.seek(0)
+            pdf_data = pdf_file.read()
+            doc = fitz.open(stream=pdf_data, filetype="pdf")
         
         for page_num in range(len(doc)):
             page = doc.load_page(page_num)
@@ -130,7 +134,7 @@ if uploaded_files:
             # Buat nama file JSON sementara
             json_filename = f"temp_{uploaded_file.name.replace('.pdf', '.json')}"
             
-            # Konversi PDF ke JSON
+            # Konversi PDF ke JSON - KIRIM FILE OBJECT, BUKAN STRING
             text_data = pdf_to_json(uploaded_file, json_filename)
             
             if text_data:
@@ -1759,4 +1763,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 

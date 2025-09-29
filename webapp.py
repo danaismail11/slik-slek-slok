@@ -1426,7 +1426,7 @@ def combine_and_clean_data(finalkredit, finallc, finalgaransi, finalsurat, final
     
     return finaldata
 
-    def save_to_excel_formatted(df, filename):
+def save_to_excel_formatted(df, filename):
     """Menyimpan DataFrame ke Excel dengan formatting - baris putih dengan border abu-abu"""
     # Buat workbook baru
     wb = Workbook()

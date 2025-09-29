@@ -21,7 +21,7 @@ except ImportError:
 
 # Set page configuration
 st.set_page_config(
-    page_title="PDF to Excel Converter - SLIK Report",
+    page_title="Credit Profiling CMB",
     page_icon="📊",
     layout="wide"
 )
@@ -59,7 +59,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Judul aplikasi
-st.markdown('<div class="main-header">🔄 PDF to Excel Converter - SLIK Report</div>', unsafe_allow_html=True)
+st.markdown('<div class="main-header">🔄 Credit Profiling CMB - Pdf to Excel Converter</div>', unsafe_allow_html=True)
 
 # Sidebar untuk upload file
 st.sidebar.title("📁 Upload PDF Files")
@@ -1676,3 +1676,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

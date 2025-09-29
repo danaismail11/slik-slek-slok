@@ -74,6 +74,9 @@ def pdf_to_json(pdf_file, json_file_path):
     text_data = []  # LIST SIMPAN TEKS DARI SETIAP PAGE
 
     try:
+        # PASTIKAN file pointer di reset ke awal
+        pdf_file.seek(0)
+        
         # Baca file PDF menggunakan PyMuPDF
         pdf_data = pdf_file.read()
         doc = fitz.open(stream=pdf_data, filetype="pdf")
@@ -81,7 +84,7 @@ def pdf_to_json(pdf_file, json_file_path):
         for page_num in range(len(doc)):
             page = doc.load_page(page_num)
             text = page.get_text()
-            if text.strip():  # Hanya tambahkan jika ada teks
+            if text and text.strip():  # Hanya tambahkan jika ada teks
                 text_data.append(text)
         
         doc.close()
@@ -114,6 +117,73 @@ def read_json_files(json_files):
     
     combined_df = pd.concat(dataframes, ignore_index=True)
     return combined_df
+
+# BAGIAN UTAMA APLIKASI YANG MEMPROSES FILE
+if uploaded_files:
+    st.write(f"📝 **Langkah 1: Konversi PDF ke JSON**")
+    
+    json_files = []
+    successful_conversions = 0
+    
+    for uploaded_file in uploaded_files:
+        try:
+            # Buat nama file JSON sementara
+            json_filename = f"temp_{uploaded_file.name.replace('.pdf', '.json')}"
+            
+            # Konversi PDF ke JSON
+            text_data = pdf_to_json(uploaded_file, json_filename)
+            
+            if text_data:
+                json_files.append(json_filename)
+                successful_conversions += 1
+                st.success(f"✅ {uploaded_file.name} berhasil dikonversi")
+            else:
+                st.error(f"❌ Gagal mengkonversi {uploaded_file.name}")
+                
+        except Exception as e:
+            st.error(f"❌ Error processing {uploaded_file.name}: {str(e)}")
+    
+    # Tampilkan summary
+    if successful_conversions > 0:
+        st.markdown(f'<div class="success-box">✅ {successful_conversions} file PDF berhasil dikonversi ke JSON</div>', unsafe_allow_html=True)
+        
+        # Lanjutkan ke langkah berikutnya jika ada file yang berhasil dikonversi
+        if json_files:
+            st.write(f"📊 **Langkah 2: Membaca dan Memproses Data JSON**")
+            
+            try:
+                # Baca semua file JSON
+                combined_df = read_json_files(json_files)
+                
+                if combined_df is not None:
+                    st.success(f"✅ Berhasil membaca {len(json_files)} file JSON")
+                    
+                    # Tampilkan preview data
+                    st.write("**Preview Data:**")
+                    st.dataframe(combined_df.head())
+                    
+                    # LANJUTKAN DENGAN FUNGSI-FUNGSI LAINNYA YANG SUDAH ADA...
+                    # (tambahkan fungsi processing lainnya di sini)
+                    
+                else:
+                    st.error("❌ Gagal membaca data JSON")
+                    
+            except Exception as e:
+                st.error(f"❌ Error processing JSON files: {str(e)}")
+    
+    # Bersihkan file temporary
+    for json_file in json_files:
+        try:
+            if os.path.exists(json_file):
+                os.remove(json_file)
+        except:
+            pass
+
+else:
+    st.info("📁 Silakan upload file PDF SLIK Report melalui sidebar di sebelah kiri")
+
+# TAMBAHKAN FUNGSI-FUNGSI LAINNYA YANG SUDAH ANDA MILIKI DI SINI
+# (seperti fungsi untuk processing data, export Excel, dll.)
 
 def process_kredit_data(combined_data):
     """Memproses data kredit dari data gabungan"""
@@ -1689,3 +1759,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

@@ -1557,7 +1557,7 @@ def main():
                     
                 status_text.text("✅ Semua file PDF berhasil dikonversi ke JSON")
                 st.markdown(
-                    '<div class="success-box" style="background-color: #00529c; padding: 15px;">✅ Konversi PDF ke JSON selesai!</div>', 
+                    '<div class="success-box" style="background-color: #00529c; padding: 15px; color: #ffffff;">✅ Konversi PDF ke JSON selesai!</div>', 
                     unsafe_allow_html=True
                 )
 
@@ -1568,7 +1568,7 @@ def main():
                 
                 if combined_data is not None:
                     st.markdown(
-                        '<div class="success-box" style="background-color: #00529c; padding: 15px;">✅ Pembacaan file JSON berhasil!</div>', 
+                        '<div class="success-box" style="background-color: #00529c; padding: 15px; color: #ffffff;">✅ Pembacaan file JSON berhasil!</div>', 
                         unsafe_allow_html=True
                     )
                     st.write(f"Total data yang digabungkan: {len(combined_data)} baris")
@@ -1647,7 +1647,7 @@ def main():
                     )
                     
                     st.markdown(
-                        '<div class="success-box" style="background-color: #00529c; padding: 15px;">✅ Proses selesai! File Excel siap diunduh.</div>', 
+                        '<div class="success-box" style="background-color: #00529c; padding: 15px; color: #ffffff;">✅ Proses selesai! File Excel siap diunduh.</div>', 
                         unsafe_allow_html=True
                     )
 
@@ -1706,6 +1706,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 

@@ -59,7 +59,37 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Judul aplikasi
-st.markdown('<div class="main-header">🔄 Credit Profiling CMB - Pdf to Excel Converter</div>', unsafe_allow_html=True)
+# st.markdown('<div class="main-header">🔄 Credit Profiling CMB - Pdf to Excel Converter</div>', unsafe_allow_html=True)
+st.markdown('''
+    <style>
+    .main-header {
+        color: #1f1f1f;  /* Warna gelap untuk light mode */
+        font-size: 24px;
+        font-weight: bold;
+        padding: 10px;
+        text-align: center;
+    }
+    
+    /* Untuk dark mode - Streamlit menggunakan theme gelap */
+    @media (prefers-color-scheme: dark) {
+        .main-header {
+            color: #f0f0f0;  /* Warna terang untuk dark mode */
+        }
+    }
+    
+    /* Alternatif: menggunakan selector theme Streamlit */
+    .stApp[data-theme="dark"] .main-header {
+        color: #f0f0f0;
+    }
+    
+    .stApp[data-theme="light"] .main-header {
+        color: #1f1f1f;
+    }
+    </style>
+    
+    <div class="main-header">🔄 Credit Profiling CMB - Pdf to Excel Converter</div>
+''', unsafe_allow_html=True)
+
 
 # Sidebar untuk upload file
 st.sidebar.title("📁 Upload PDF Files")
@@ -1676,4 +1706,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 

@@ -74,21 +74,14 @@ def pdf_to_json(pdf_file, json_file_path):
     text_data = []  # LIST SIMPAN TEKS DARI SETIAP PAGE
 
     try:
-        # CEK TIPE DATA - jika string (file path), jika file object
-        if isinstance(pdf_file, str):
-            # Jika pdf_file adalah file path (string)
-            doc = fitz.open(pdf_file)
-        else:
-            # Jika pdf_file adalah file object (Streamlit uploaded file)
-            # Reset file pointer ke awal
-            pdf_file.seek(0)
-            pdf_data = pdf_file.read()
-            doc = fitz.open(stream=pdf_data, filetype="pdf")
+        # Baca file PDF menggunakan PyMuPDF
+        pdf_data = pdf_file.read()
+        doc = fitz.open(stream=pdf_data, filetype="pdf")
         
         for page_num in range(len(doc)):
             page = doc.load_page(page_num)
             text = page.get_text()
-            if text and text.strip():  # Hanya tambahkan jika ada teks
+            if text.strip():  # Hanya tambahkan jika ada teks
                 text_data.append(text)
         
         doc.close()
@@ -121,82 +114,6 @@ def read_json_files(json_files):
     
     combined_df = pd.concat(dataframes, ignore_index=True)
     return combined_df
-
-# BAGIAN UTAMA APLIKASI YANG MEMPROSES FILE
-if uploaded_files:
-    st.write(f"📝 **Langkah 1: Konversi PDF ke JSON**")
-    
-    json_files = []
-    successful_conversions = 0
-    
-    for uploaded_file in uploaded_files:
-        try:
-            # Buat nama file JSON sementara
-            json_filename = f"temp_{uploaded_file.name.replace('.pdf', '.json')}"
-            
-            # Konversi PDF ke JSON - KIRIM FILE OBJECT, BUKAN STRING
-            text_data = pdf_to_json(uploaded_file, json_filename)
-            
-            if text_data:
-                json_files.append(json_filename)
-                successful_conversions += 1
-                st.success(f"✅ {uploaded_file.name} berhasil dikonversi")
-            else:
-                st.error(f"❌ Gagal mengkonversi {uploaded_file.name}")
-                
-        except Exception as e:
-            st.error(f"❌ Error processing {uploaded_file.name}: {str(e)}")
-    
-    # Tampilkan summary
-    if successful_conversions > 0:
-        st.markdown(f'<div class="success-box">✅ {successful_conversions} file PDF berhasil dikonversi ke JSON</div>', unsafe_allow_html=True)
-        
-        # Lanjutkan ke langkah berikutnya jika ada file yang berhasil dikonversi
-        if json_files:
-            st.write(f"📊 **Langkah 2: Membaca dan Memproses Data JSON**")
-            
-            try:
-                # Baca semua file JSON
-                combined_df = read_json_files(json_files)
-                
-                if combined_df is not None:
-                    st.success(f"✅ Berhasil membaca {len(json_files)} file JSON")
-                    
-                    # Tampilkan preview data
-                    st.write("**Preview Data:**")
-                    st.dataframe(combined_df.head())
-                    
-                    # LANJUTKAN DENGAN FUNGSI-FUNGSI LAINNYA YANG SUDAH ADA...
-                    # (tambahkan fungsi processing lainnya di sini)
-                    
-                else:
-                    st.error("❌ Gagal membaca data JSON")
-                    
-            except Exception as e:
-                st.error(f"❌ Error processing JSON files: {str(e)}")
-    
-    # Bersihkan file temporary
-    for json_file in json_files:
-        try:
-            if os.path.exists(json_file):
-                os.remove(json_file)
-        except:
-            pass
-
-else:
-    st.info("📁 Silakan upload file PDF SLIK Report melalui sidebar di sebelah kiri")
-
-# Setelah berhasil baca JSON, tampilkan sample data mentah
-if combined_df is not None:
-    st.success(f"✅ Berhasil membaca {len(json_files)} file JSON")
-    
-    # DEBUG: Tampilkan data mentah
-    st.write("**Data Mentah dari PDF (Sample):**")
-    for i, row in combined_df.head(3).iterrows():
-        st.write(f"--- Baris {i} ---")
-        st.text(row[0] if len(row) > 0 else "No data")  # Assuming first column has the text
-    
-    # Lanjutkan processing...
 
 def process_kredit_data(combined_data):
     """Memproses data kredit dari data gabungan"""

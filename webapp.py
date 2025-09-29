@@ -1,5 +1,4 @@
 import streamlit as st
-import pdfplumber
 import json
 import pandas as pd
 import re
@@ -14,10 +13,10 @@ import subprocess
 import sys
 
 try:
-    import pdfplumber
+    import fitz  # PyMuPDF
 except ImportError:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "pdfplumber"])
-    import pdfplumber
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "PyMuPDF"])
+    import fitz
 
 # Set page configuration
 st.set_page_config(
@@ -69,20 +68,34 @@ uploaded_files = st.sidebar.file_uploader(
     accept_multiple_files=True
 )
 
-# Fungsi-fungsi utama (diperbaiki sesuai kode ipynb)
+# FUNGSI-FUNGSI UTAMA (DIUBAH MENGGUNAKAN PyMuPDF)
 def pdf_to_json(pdf_file, json_file_path):
-    """Mengkonversi file PDF ke JSON"""
+    """Mengkonversi file PDF ke JSON menggunakan PyMuPDF"""
     text_data = []  # LIST SIMPAN TEKS DARI SETIAP PAGE
 
-    with pdfplumber.open(pdf_file) as pdf:  
-        for page in pdf.pages:  
-            text = page.extract_text()  
-            if text: 
-                text_data.append(text) 
+    try:
+        # Baca file PDF menggunakan PyMuPDF
+        pdf_data = pdf_file.read()
+        doc = fitz.open(stream=pdf_data, filetype="pdf")
+        
+        for page_num in range(len(doc)):
+            page = doc.load_page(page_num)
+            text = page.get_text()
+            if text.strip():  # Hanya tambahkan jika ada teks
+                text_data.append(text)
+        
+        doc.close()
+        
+    except Exception as e:
+        st.error(f"Error membaca PDF: {str(e)}")
+        return []
 
     # SIMPAN TEKS DALAM FORMAT JSON
-    with open(json_file_path, 'w', encoding='utf-8') as output_file:  
-        json.dump(text_data, output_file, ensure_ascii=False, indent=4)
+    try:
+        with open(json_file_path, 'w', encoding='utf-8') as output_file:  
+            json.dump(text_data, output_file, ensure_ascii=False, indent=4)
+    except Exception as e:
+        st.error(f"Error menyimpan JSON: {str(e)}")
     
     return text_data
 
@@ -1331,15 +1344,54 @@ def combine_and_clean_data(finalkredit, finallc, finalgaransi, finalsurat, final
             .str.strip()
         )
 
-    # CLEANING DATA NUMERIK
+    # CLEANING DATA NUMERIK - Simpan sebagai numeric
+    columns_to_clean = ['Plafon','Baki Debet/Nominal','Nilai Perolehan/Jaminan/Realisasi','Tunggakan Pokok',
+                        'Tunggakan Bunga','Plafon Awal','Denda','Nilai Pasar/Proyek']
+    
     if not Gabungan3.empty:
-        columns_to_clean = ['Plafon','Baki Debet/Nominal','Nilai Perolehan/Jaminan/Realisasi','Tunggakan Pokok',
-                            'Tunggakan Bunga','Plafon Awal','Denda','Nilai Pasar/Proyek']
         columns_to_clean = [col for col in columns_to_clean if col in Gabungan3.columns]
 
-        # Apply ke kolom
         for col in columns_to_clean:
             Gabungan3[col] = Gabungan3[col].apply(clean_numeric_data)
+            Gabungan3[col] = pd.to_numeric(Gabungan3[col], errors='coerce').fillna(0)
+
+    # Fungsi untuk display dengan format
+    def display_formatted(df):
+        """Display dataframe dengan format number yang rapi"""
+        display_df = df.copy()
+        available_columns = [col for col in columns_to_clean if col in display_df.columns]
+        for col in available_columns:
+            display_df[col] = display_df[col].apply(
+                lambda x: f"{x:,.0f}" if x != 0 else "-"
+            )
+        return display_df
+
+    # Fungsi untuk export ke Excel dengan format accounting
+    def export_to_excel_accounting(df, filename, sheet_name='Data'):
+        """Export ke Excel dengan format accounting untuk kolom numerik"""
+        with pd.ExcelWriter(filename, engine='xlsxwriter') as writer:
+            df.to_excel(writer, sheet_name=sheet_name, index=False)
+            
+            workbook = writer.book
+            worksheet = writer.sheets[sheet_name]
+            
+            # Format accounting dengan comma separator
+            accounting_format = workbook.add_format({'num_format': '#,##0'})
+            
+            # Terapkan format ke kolom numerik
+            available_columns = [col for col in columns_to_clean if col in df.columns]
+            for col_name in available_columns:
+                if col_name in df.columns:
+                    col_idx = df.columns.get_loc(col_name)
+                    worksheet.set_column(col_idx, col_idx, None, accounting_format)
+            
+            # Auto-adjust column width
+            for idx, col in enumerate(df.columns):
+                max_len = max(df[col].astype(str).str.len().max(), len(col)) + 2
+                worksheet.set_column(idx, idx, min(max_len, 50))
+
+    # Gunakan untuk display
+    print(display_formatted(Gabungan3))
 
     # CLEANING TANGGAL
     date_columns = ['Tanggal Kondisi','Tanggal Jatuh Tempo','Tanggal Mulai/Terbit','Tanggal Macet/Wanprestasi',
@@ -1364,6 +1416,21 @@ def combine_and_clean_data(finalkredit, finallc, finalgaransi, finalsurat, final
         except ValueError:
             pass
 
+        sort_columns = []
+    
+    if 'Nama Debitur' in Gabungan3.columns:
+        sort_columns.append('Nama Debitur')
+    
+    if 'Nama Group' in Gabungan3.columns:
+        sort_columns.append('Nama Group')
+
+    # Jika kedua kolom ada, lakukan sorting
+    if sort_columns:
+        Gabungan3 = Gabungan3.sort_values(by=sort_columns, ascending=True)
+        print(f"Data telah di-sort berdasarkan: {sort_columns}")
+    else:
+        print("Kolom 'Nama Debitur' atau 'Nama Group' tidak ditemukan untuk sorting")
+
     # FINAL SELECTION
     kolom_tersedia_final = [kol for kol in kolom_dipilih if kol in Gabungan3.columns]
     finaldata = Gabungan3[kolom_tersedia_final]
@@ -1373,12 +1440,12 @@ def combine_and_clean_data(finalkredit, finallc, finalgaransi, finalsurat, final
     return finaldata
 
 def save_to_excel_formatted(df, filename):
-    """Menyimpan DataFrame ke Excel dengan formatting"""
+    """Menyimpan DataFrame ke Excel dengan formatting - baris putih dengan border abu-abu"""
     # Buat workbook baru
     wb = Workbook()
     ws = wb.active
     
-    # Style border putih yang lebih tebal (medium)
+    # Style border untuk header (putih)
     white_border = Border(
         left=Side(style='medium', color='FFFFFF'),
         right=Side(style='medium', color='FFFFFF'),
@@ -1386,11 +1453,28 @@ def save_to_excel_formatted(df, filename):
         bottom=Side(style='medium', color='FFFFFF')
     )
     
+    # Style border untuk data (abu-abu #D9D9D9)
+    gray_border = Border(
+        left=Side(style='thin', color='D9D9D9'),
+        right=Side(style='thin', color='D9D9D9'),
+        top=Side(style='thin', color='D9D9D9'),
+        bottom=Side(style='thin', color='D9D9D9')
+    )
+    
+    # Fill putih untuk semua sel
+    white_fill = PatternFill(start_color="FFFFFF", end_color="FFFFFF", fill_type="solid")
+    
     # Konversi DataFrame ke rows
     for r_idx, row in enumerate(dataframe_to_rows(df, index=False, header=True), 1):
         for c_idx, value in enumerate(row, 1):
             cell = ws.cell(row=r_idx, column=c_idx, value=value)
-            cell.border = white_border
+            cell.fill = white_fill  # Semua sel berwarna putih
+            
+            # Tentukan border berdasarkan baris
+            if r_idx == 1:  # Header
+                cell.border = white_border
+            else:  # Data rows
+                cell.border = gray_border
     
     # Format header - navy dengan font putih
     header_fill = PatternFill(start_color="305496", end_color="305496", fill_type="solid")
@@ -1399,19 +1483,7 @@ def save_to_excel_formatted(df, filename):
     for cell in ws[1]:
         cell.fill = header_fill
         cell.font = header_font
-        cell.border = white_border
-    
-    # Format baris zigzag putih abu-abu
-    grey_fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
-    white_fill = PatternFill(start_color="FFFFFF", end_color="FFFFFF", fill_type="solid")
-    
-    for row in ws.iter_rows(min_row=2):
-        for cell in row:
-            if cell.row % 2 == 0:  # Baris genap
-                cell.fill = white_fill
-            else:  # Baris ganjil
-                cell.fill = grey_fill
-            cell.border = white_border
+        cell.border = white_border  # Header tetap border putih
     
     # Sesuaikan lebar kolom otomatis
     for column in ws.columns:

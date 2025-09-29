@@ -94,7 +94,7 @@ st.markdown('''
 # Sidebar untuk upload file
 st.sidebar.title("📁 Upload PDF Files")
 uploaded_files = st.sidebar.file_uploader(
-    "Pilih file PDF SLIK Report", 
+    "Pilih file PDF", 
     type=["pdf"], 
     accept_multiple_files=True
 )
@@ -1641,7 +1641,7 @@ def main():
                     st.download_button(
                         label="📥 Download Excel File",
                         data=excel_data,
-                        file_name="SLIK_Report_Converted.xlsx",
+                        file_name="Credit Profiling Converted.xlsx",
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                         type="primary"
                     )
@@ -1674,7 +1674,7 @@ def main():
                     shutil.rmtree(temp_dir)
     else:
         st.markdown(
-            '<div style="background-color: #00529c; padding: 15px; border-radius: 5px; border-left: 4px solid #1890ff;color: #ffffff;">📋 Silahkan upload file PDF SLIK Report di sidebar</div>', 
+            '<div style="background-color: #00529c; padding: 15px; border-radius: 5px; border-left: 4px solid #1890ff;color: #ffffff;">📋 Silahkan upload file PDF di sidebar</div>', 
             unsafe_allow_html=True
         )
         
@@ -1683,7 +1683,7 @@ def main():
         st.markdown("""
         ### ℹ️ Tentang Aplikasi
         
-        Aplikasi ini mengkonversi file PDF SLIK Report menjadi format Excel dengan tahapan:
+        Aplikasi ini mengkonversi file PDF Credit Profiling menjadi format Excel dengan tahapan:
         
         1. **Read PDF** - Membaca file PDF yang diupload
         2. **Convert to JSON** - Mengkonversi konten PDF ke format JSON
@@ -1701,11 +1701,12 @@ def main():
         - Plafon, Baki Debet, Suku Bunga
         - Kualitas & Kondisi
         - Data Tanggal (Mulai, Jatuh Tempo, Kondisi, dll)
-        - Dan kolom-kolom lainnya sesuai format SLIK Report
+        - Dan kolom-kolom lainnya sesuai format Report
         """)
 
 if __name__ == "__main__":
     main()
+
 
 
 

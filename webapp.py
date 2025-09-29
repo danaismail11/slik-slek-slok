@@ -1674,7 +1674,7 @@ def main():
                     shutil.rmtree(temp_dir)
     else:
         st.markdown(
-            '<div style="background-color: #00529c; padding: 15px; border-radius: 5px; border-left: 4px solid #1890ff;">📋 Silahkan upload file PDF SLIK Report di sidebar</div>', 
+            '<div style="background-color: #00529c; padding: 15px; border-radius: 5px; border-left: 4px solid #1890ff;color: #ffffff;">📋 Silahkan upload file PDF SLIK Report di sidebar</div>', 
             unsafe_allow_html=True
         )
         
@@ -1706,5 +1706,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 

@@ -10,6 +10,14 @@ import numpy as np
 from openpyxl.styles import PatternFill, Font, Border, Side
 from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl import Workbook
+import subprocess
+import sys
+
+try:
+    import pdfplumber
+except ImportError:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "pdfplumber"])
+    import pdfplumber
 
 # Set page configuration
 st.set_page_config(

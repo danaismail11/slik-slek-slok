@@ -23,7 +23,7 @@ st.markdown("""
 <style>
     .main-header {
         font-size: 2.5rem;
-        color: #1f77b4;
+        color: #ffffff;
         text-align: center;
         margin-bottom: 2rem;
     }
@@ -1272,8 +1272,6 @@ def combine_and_clean_data(finalkredit, finallc, finalgaransi, finalsurat, final
     
     # Buat DataFrame baru hanya dengan kolom yang tersedia
     Gabungan3 = Gabungan2[kolom_tersedia]
-    
-    st.info(f"📊 Kolom yang tersedia: {len(kolom_tersedia)} dari {len(kolom_dipilih)}")
 
     # PROSES BANK DAN CABANG
     st.info("🏦 Memproses data bank dan cabang...")
@@ -1310,7 +1308,6 @@ def combine_and_clean_data(finalkredit, finallc, finalgaransi, finalsurat, final
         st.warning(f"⚠️ Gagal memproses data bank: {str(e)}")
 
     # CLEANING NAMA DEBITUR DAN GROUP
-    st.info("👤 Membersihkan nama debitur dan group...")
     if not Gabungan3.empty and 'Nama Debitur' in Gabungan3.columns and 'Nama Group' in Gabungan3.columns:
         Gabungan3["Nama Debitur"] = (
             Gabungan3["Nama Debitur"]
@@ -1325,10 +1322,8 @@ def combine_and_clean_data(finalkredit, finallc, finalgaransi, finalsurat, final
             .str.replace(r'(?i)(posisi|laki|perempuan).*$', '', regex=True)
             .str.strip()
         )
-        st.success("✅ Nama debitur dan group berhasil dibersihkan")
 
     # CLEANING DATA NUMERIK
-    st.info("🔢 Membersihkan data numerik...")
     if not Gabungan3.empty:
         columns_to_clean = ['Plafon','Baki Debet/Nominal','Nilai Perolehan/Jaminan/Realisasi','Tunggakan Pokok',
                             'Tunggakan Bunga','Plafon Awal','Denda','Nilai Pasar/Proyek']
@@ -1337,10 +1332,8 @@ def combine_and_clean_data(finalkredit, finallc, finalgaransi, finalsurat, final
         # Apply ke kolom
         for col in columns_to_clean:
             Gabungan3[col] = Gabungan3[col].apply(clean_numeric_data)
-        st.success(f"✅ {len(columns_to_clean)} kolom numerik berhasil dibersihkan")
 
     # CLEANING TANGGAL
-    st.info("📅 Memproses data tanggal...")
     date_columns = ['Tanggal Kondisi','Tanggal Jatuh Tempo','Tanggal Mulai/Terbit','Tanggal Macet/Wanprestasi',
                     'Tanggal Akad Awal','Tanggal Akad Akhir','Tanggal Restrukturisasi Akhir','Tanggal Awal Kredit']
 
@@ -1352,22 +1345,16 @@ def combine_and_clean_data(finalkredit, finallc, finalgaransi, finalsurat, final
             if success_rate > 0:
                 date_success_count += 1
 
-    st.success(f"✅ {date_success_count} kolom tanggal berhasil diproses")
-
     # CLEANING PERSENTASE
-    st.info("📊 Membersihkan data persentase...")
     if not Gabungan3.empty and 'Suku Bunga/Imbalan' in Gabungan3.columns:
         Gabungan3['Suku Bunga/Imbalan'] = Gabungan3['Suku Bunga/Imbalan'].apply(clean_percentage)
-        st.success("✅ Data suku bunga/imbalan berhasil dibersihkan")
 
     # KONVERSI TIPE DATA
-    st.info("🔄 Mengkonversi tipe data...")
     for col in Gabungan3.select_dtypes(include=['object']):
         try:
             Gabungan3[col] = pd.to_numeric(Gabungan3[col], errors='ignore')
         except ValueError:
             pass
-    st.success("✅ Konversi tipe data selesai")
 
     # FINAL SELECTION
     kolom_tersedia_final = [kol for kol in kolom_dipilih if kol in Gabungan3.columns]
@@ -1470,17 +1457,23 @@ def main():
                     json_files.append(json_path)
                     
                     progress_bar.progress((i + 1) / len(uploaded_files))
-                
+                    
                 status_text.text("✅ Semua file PDF berhasil dikonversi ke JSON")
-                st.markdown('<div class="success-box">✅ Konversi PDF ke JSON selesai!</div>', unsafe_allow_html=True)
-                
+                st.markdown(
+                    '<div class="success-box" style="background-color: #00529c; padding: 15px;">✅ Konversi PDF ke JSON selesai!</div>', 
+                    unsafe_allow_html=True
+                )
+
                 # Step 2: Baca file JSON
                 st.markdown('<div class="sub-header">📖 Langkah 2: Membaca File JSON</div>', unsafe_allow_html=True)
                 
                 combined_data = read_json_files(json_files)
                 
                 if combined_data is not None:
-                    st.markdown('<div class="success-box">✅ Pembacaan file JSON berhasil!</div>', unsafe_allow_html=True)
+                    st.markdown(
+                        '<div class="success-box" style="background-color: #00529c; padding: 15px;">✅ Pembacaan file JSON berhasil!</div>', 
+                        unsafe_allow_html=True
+                    )
                     st.write(f"Total data yang digabungkan: {len(combined_data)} baris")
                     
                     # Step 3: Proses semua jenis data
@@ -1518,7 +1511,7 @@ def main():
                         st.metric("Fasilitas", f"{len(fasilitas_data)}" if not fasilitas_data.empty else "0")
                     
                     # Step 4: Cleaning final data
-                    st.markdown('<div class="sub-header">✨ Langkah 4: Cleaning Data Final</div>', unsafe_allow_html=True)
+                    st.markdown('<div class="sub-header">✨ Langkah 4: Cleaning Data</div>', unsafe_allow_html=True)
                     
                     with st.spinner("Menggabungkan dan membersihkan data..."):
                         final_data = combine_and_clean_data(kredit_data, lc_data, garansi_data, surat_data, fasilitas_data)
@@ -1527,8 +1520,8 @@ def main():
                     st.markdown('<div class="sub-header">👁️ Preview Data</div>', unsafe_allow_html=True)
                     
                     # Tampilkan statistik data
-                    st.write(f"**Shape data final:** {final_data.shape}")
-                    st.write(f"**Total records:** {len(final_data)}")
+                    st.write(f"**Shape data:** {final_data.shape}")
+                    st.write(f"**Total baris:** {len(final_data)}")
                     st.write(f"**Total kolom:** {len(final_data.columns)}")
                     
                     # Tampilkan preview tabel
@@ -1556,8 +1549,11 @@ def main():
                         type="primary"
                     )
                     
-                    st.markdown('<div class="success-box">✅ Proses selesai! File Excel siap diunduh.</div>', unsafe_allow_html=True)
-                    
+                    st.markdown(
+                        '<div class="success-box" style="background-color: #00529c; padding: 15px;">✅ Proses selesai! File Excel siap diunduh.</div>', 
+                        unsafe_allow_html=True
+                    )
+
                     # Tampilkan informasi file
                     file_size = len(excel_data) / 1024 / 1024  # Convert to MB
                     st.info(f"**Ukuran file:** {file_size:.2f} MB")
@@ -1580,8 +1576,12 @@ def main():
                     import shutil
                     shutil.rmtree(temp_dir)
     else:
-        st.markdown('<div class="info-box">📋 Silakan upload file PDF SLIK Report di sidebar</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div style="background-color: #00529c; padding: 15px; border-radius: 5px; border-left: 4px solid #1890ff;">📋 Silahkan upload file PDF SLIK Report di sidebar</div>', 
+            unsafe_allow_html=True
+        )
         
+
         # Informasi tentang aplikasi
         st.markdown("""
         ### ℹ️ Tentang Aplikasi
@@ -1593,23 +1593,18 @@ def main():
         3. **Read JSON File** - Membaca dan menggabungkan file JSON
         4. **Process Data** - Memproses berbagai jenis data (Kredit, LC, Garansi, Surat, Fasilitas)
         5. **Combine & Clean** - Menggabungkan dan membersihkan data
-        6. **Export to Excel** - Menghasilkan file Excel yang diformat
+        6. **Export to Excel** - Menghasilkan file Excel
         
         ### 📋 Format Output Excel
         
         File Excel yang dihasilkan akan berisi data dengan kolom-kolom berikut:
-        - Nama Group & Debitur
-        - BANK & CABANG
+        - Nama Debitur
+        - Nama Bank atau Pelapor
         - Kategori Fasilitas
-        - Data Plafon, Baki Debet, Suku Bunga
+        - Plafon, Baki Debet, Suku Bunga
         - Kualitas & Kondisi
         - Data Tanggal (Mulai, Jatuh Tempo, Kondisi, dll)
         - Dan kolom-kolom lainnya sesuai format SLIK Report
-        
-        ### ⚠️ Catatan Penting
-        
-        Pastikan file "ZZ Data Kode Bank.xlsx" berada di direktori yang sama dengan aplikasi
-        untuk pemrosesan data bank yang optimal.
         """)
 
 if __name__ == "__main__":

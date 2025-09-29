@@ -1426,7 +1426,7 @@ def combine_and_clean_data(finalkredit, finallc, finalgaransi, finalsurat, final
     
     return finaldata
 
-def save_to_excel_formatted(df, filename):
+    def save_to_excel_formatted(df, filename):
     """Menyimpan DataFrame ke Excel dengan formatting - baris putih dengan border abu-abu"""
     # Buat workbook baru
     wb = Workbook()
@@ -1593,71 +1593,33 @@ def main():
                     
                     # Tampilkan preview tabel
                     st.dataframe(final_data.head(10))
-
+                    
                     # Step 5: Download Excel
                     st.markdown('<div class="sub-header">💾 Langkah 5: Download File Excel</div>', unsafe_allow_html=True)
-                    
-                    # Input untuk custom nama file
-                    col1, col2 = st.columns([2, 1])
-                    with col1:
-                        custom_filename = st.text_input(
-                            "Nama file Excel (tanpa ekstensi .xlsx):",
-                            value="SLIK_Report_Converted",
-                            placeholder="Masukkan nama file yang diinginkan"
-                        )
-                    with col2:
-                        st.write("")  # Spacer untuk alignment
-                        st.write("")  # Spacer untuk alignment
-                        st.info("Contoh: Laporan_SLIK_2024")
-                    
-                    # Validasi nama file
-                    if custom_filename:
-                        # Bersihkan nama file dari karakter yang tidak diizinkan
-                        cleaned_filename = re.sub(r'[<>:"/\\|?*]', '', custom_filename)
-                        cleaned_filename = cleaned_filename.strip()
-                        
-                        if not cleaned_filename:
-                            cleaned_filename = "SLIK_Report_Converted"
-                            st.warning("Nama file tidak valid, menggunakan nama default.")
-                        
-                        # Pastikan akhirannya .xlsx
-                        if not cleaned_filename.endswith('.xlsx'):
-                            cleaned_filename += '.xlsx'
-                    else:
-                        cleaned_filename = "SLIK_Report_Converted.xlsx"
                     
                     # Simpan ke Excel
                     with st.spinner("Menyimpan ke format Excel..."):
                         excel_buffer = tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx')
                         save_to_excel_formatted(final_data, excel_buffer.name)
                         excel_buffer.close()
-                    
+
                         # Baca file Excel untuk download
                         with open(excel_buffer.name, "rb") as f:
                             excel_data = f.read()
                     
                     # Tombol download
                     st.download_button(
-                        label=f"📥 Download {cleaned_filename}",
+                        label="📥 Download Excel File",
                         data=excel_data,
-                        file_name=cleaned_filename,
+                        file_name="SLIK_Report_Converted.xlsx",
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                         type="primary"
                     )
-                    
-                    # Tampilkan preview nama file
-                    st.info(f"📄 File akan diunduh sebagai: **{cleaned_filename}**")
                     
                     st.markdown(
                         '<div class="success-box" style="background-color: #00529c; padding: 15px;">✅ Proses selesai! File Excel siap diunduh.</div>', 
                         unsafe_allow_html=True
                     )
-                    
-                    # Bersihkan file temporary
-                    try:
-                        os.unlink(excel_buffer.name)
-                    except:
-                        pass
 
                     # Tampilkan informasi file
                     file_size = len(excel_data) / 1024 / 1024  # Convert to MB
@@ -1714,4 +1676,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
